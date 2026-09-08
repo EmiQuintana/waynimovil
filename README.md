@@ -56,8 +56,6 @@ Los tests cubren: no confirmar un monto mayor al saldo, actualización de saldo 
 
 ## Decisiones de arquitectura
 
-Separación mínima, sin capas de más:
-
 | Carpeta | Responsabilidad |
 | --- | --- |
 | `services/` | HTTP (Random User) y persistencia del ledger |
