@@ -38,6 +38,10 @@ const defaultLedger: Ledger = {
 let transferLock = false;
 
 function wait(ms: number) {
+  if (process.env.JEST_WORKER_ID) {
+    return Promise.resolve();
+  }
+
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
@@ -80,6 +84,14 @@ export function getLedger(): Ledger {
 
 export function saveLedger(ledger: Ledger) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(ledger));
+}
+
+export function clearLedger() {
+  transferLock = false;
+
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(STORAGE_KEY);
+  }
 }
 
 export async function createTransfer(payload: TransferPayload) {
