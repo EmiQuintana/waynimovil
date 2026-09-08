@@ -3,13 +3,16 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useContacts, useCurrentUser } from "@/hooks/useDirectory";
+import { useTopUpBalance } from "@/hooks/useTopUpBalance";
 import { useMovements, useWallet } from "@/hooks/useWallet";
 import { useTransferDraftStore } from "@/store/transferDraft";
 import type { AppUser } from "@/services/users";
-import type { Movement } from "@/services/wallet";
+import { INITIAL_BALANCE_CENTS, type Movement } from "@/services/wallet";
 import { formatCurrency, formatSignedCurrency } from "@/utils/formatCurrency";
 import { formatDateTime } from "@/utils/formatDate";
 import { AppShell } from "./AppShell";
+import { ContactCarousel } from "./ContactCarousel";
+import { ErrorMessage } from "./ErrorMessage";
 import { ArrowDownIcon, SwapIcon, WalletIcon } from "./Icons";
 
 export function HomeScreen() {
@@ -19,6 +22,9 @@ export function HomeScreen() {
   const contacts = useContacts();
   const wallet = useWallet();
   const movements = useMovements();
+  const topUp = useTopUpBalance();
+  const canAddMoney =
+    (wallet.data?.balanceCents ?? 0) < INITIAL_BALANCE_CENTS;
 
   const usersError = currentUser.isError || contacts.isError;
   const usersLoading = currentUser.isLoading || contacts.isLoading;
@@ -34,19 +40,20 @@ export function HomeScreen() {
 
   return (
     <AppShell>
-      <header className="bg-[#2ECC71] px-6 pb-16 pt-6 text-white">
+        <header className="bg-[#2ECC71] px-6 pb-16 pt-6 text-white">
+          <h1 className="sr-only">Home</h1>
         {usersLoading ? (
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 animate-pulse rounded-full bg-white/40" />
             <div className="h-4 w-28 animate-pulse rounded bg-white/40" />
           </div>
         ) : usersError ? (
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm">We couldn&apos;t load your profile.</p>
+          <div>
+            <p>We couldn&apos;t load your profile.</p>
             <button
               type="button"
               onClick={() => currentUser.refetch()}
-              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#2ECC71]"
+              className="mt-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#171717] underline"
             >
               Retry
             </button>
@@ -71,9 +78,21 @@ export function HomeScreen() {
           {wallet.isLoading ? (
             <div className="mx-auto mt-3 h-10 w-40 animate-pulse rounded bg-white/40" />
           ) : (
-            <p className="mt-1 text-4xl font-bold tracking-tight">
-              {formatCurrency(wallet.data?.balanceCents ?? 0)}
-            </p>
+            <>
+              <p className="mt-1 text-4xl font-bold tracking-tight">
+                {formatCurrency(wallet.data?.balanceCents ?? 0)}
+              </p>
+              {canAddMoney ? (
+                <button
+                  type="button"
+                  onClick={() => topUp.mutate()}
+                  disabled={topUp.isPending}
+                  className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#171717]"
+                >
+                  {topUp.isPending ? "Adding money..." : "Add money"}
+                </button>
+              ) : null}
+            </>
           )}
         </div>
       </header>
@@ -94,30 +113,12 @@ export function HomeScreen() {
           ) : !contacts.data?.length ? (
             <EmptyState message="You don't have contacts yet." />
           ) : (
-            <ul className="flex gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {contacts.data
-                .filter((contact) => contact.id !== currentUser.data?.id)
-                .map((contact) => (
-                <li key={contact.id} className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectContact(contact)}
-                    className="flex w-16 flex-col items-center gap-2"
-                  >
-                    <Image
-                      src={contact.avatar}
-                      alt={contact.fullName}
-                      width={56}
-                      height={56}
-                      className="h-14 w-14 rounded-full object-cover"
-                    />
-                    <span className="w-full truncate text-center text-xs text-zinc-700">
-                      {contact.firstName}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <ContactCarousel
+              contacts={contacts.data.filter(
+                (contact) => contact.id !== currentUser.data?.id,
+              )}
+              onSelect={handleSelectContact}
+            />
           )}
         </div>
 
@@ -167,6 +168,9 @@ function MovementItem({ movement }: { movement: Movement }) {
           movement.amountCents < 0 ? "text-red-500" : "text-emerald-500"
         }`}
       >
+        <span className="sr-only">
+          {movement.amountCents < 0 ? "Outgoing " : "Incoming "}
+        </span>
         {formatSignedCurrency(movement.amountCents)}
       </p>
     </li>
@@ -219,12 +223,12 @@ function ErrorBanner({
   onRetry: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
-      <p>{message}</p>
+    <div>
+      <ErrorMessage>{message}</ErrorMessage>
       <button
         type="button"
         onClick={onRetry}
-        className="font-semibold text-red-800 underline"
+        className="mt-2 font-semibold text-zinc-900 underline"
       >
         Retry
       </button>

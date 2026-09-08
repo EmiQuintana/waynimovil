@@ -149,3 +149,37 @@ export async function createTransfer(payload: TransferPayload) {
     transferLock = false;
   }
 }
+
+export function cashIn(amountCents: number, title = "CashIn") {
+  if (!Number.isInteger(amountCents) || amountCents <= 0) {
+    throw new Error("Invalid amount");
+  }
+
+  const ledger = getLedger();
+  const movement: Movement = {
+    id: crypto.randomUUID(),
+    title,
+    amountCents,
+    type: "cashin",
+    createdAt: new Date().toISOString(),
+    reference: createReference(),
+  };
+
+  saveLedger({
+    balanceCents: ledger.balanceCents + amountCents,
+    movements: [movement, ...ledger.movements],
+  });
+
+  return movement;
+}
+
+export function topUpToInitialBalance() {
+  const ledger = getLedger();
+  const amountCents = INITIAL_BALANCE_CENTS - ledger.balanceCents;
+
+  if (amountCents <= 0) {
+    return null;
+  }
+
+  return cashIn(amountCents);
+}

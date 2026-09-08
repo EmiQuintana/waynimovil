@@ -1,15 +1,28 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { BackIcon } from "./Icons";
 
 type FlowHeaderProps = {
   title: string;
   children?: React.ReactNode;
+  focusTitle?: boolean;
 };
 
-export function FlowHeader({ title, children }: FlowHeaderProps) {
+export function FlowHeader({
+  title,
+  children,
+  focusTitle = false,
+}: FlowHeaderProps) {
   const router = useRouter();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (focusTitle) {
+      headingRef.current?.focus();
+    }
+  }, [focusTitle, title]);
 
   return (
     <header className="bg-[#2ECC71] px-4 pb-14 pt-4 text-white">
@@ -22,7 +35,13 @@ export function FlowHeader({ title, children }: FlowHeaderProps) {
         >
           <BackIcon className="h-6 w-6" />
         </button>
-        <h1 className="text-lg font-semibold">{title}</h1>
+        <h1
+          ref={headingRef}
+          tabIndex={focusTitle ? -1 : undefined}
+          className="text-lg font-semibold outline-none"
+        >
+          {title}
+        </h1>
       </div>
       {children}
     </header>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { AppShell } from "@/components/AppShell";
+import { ErrorMessage } from "@/components/ErrorMessage";
 import { FlowHeader } from "@/components/FlowHeader";
 import { useCurrentUser } from "@/hooks/useDirectory";
 
@@ -10,15 +11,13 @@ export function ProfileScreen() {
 
   return (
     <AppShell>
-      <FlowHeader title="Profile" />
+      <FlowHeader title="Profile" focusTitle />
       <section className="-mt-10 flex flex-1 flex-col rounded-t-[2.5rem] bg-white px-6 pb-8 pt-10">
         {currentUser.isLoading ? (
           <ProfileSkeleton />
         ) : currentUser.isError ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <p className="text-sm text-red-600">
-              We couldn&apos;t load your profile.
-            </p>
+            <ErrorMessage>We couldn&apos;t load your profile.</ErrorMessage>
             <button
               type="button"
               onClick={() => currentUser.refetch()}

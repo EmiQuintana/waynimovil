@@ -3,12 +3,14 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { useFocusOnMount } from "@/hooks/useFocusOnMount";
 import { useTransferDraftStore } from "@/store/transferDraft";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatLongDate, formatTime } from "@/utils/formatDate";
 
 export default function TransferSuccessPage() {
   const router = useRouter();
+  const headingRef = useFocusOnMount<HTMLHeadingElement>();
   const lastCompleted = useTransferDraftStore((state) => state.lastCompleted);
   const reset = useTransferDraftStore((state) => state.reset);
 
@@ -51,10 +53,14 @@ export default function TransferSuccessPage() {
     <div className="flex min-h-dvh justify-center bg-[#2ECC71]">
       <div className="flex min-h-dvh w-full max-w-[430px] flex-col px-5 py-8 md:max-w-2xl">
         <div className="flex flex-1 flex-col rounded-[2rem] bg-white px-6 py-8">
-          <h1 className="text-center text-lg font-bold text-[#2ECC71]">
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-center text-lg font-bold text-[#2ECC71] outline-none"
+          >
             Transfer Successful
           </h1>
-          <p className="mt-1 text-center text-sm text-zinc-400">
+          <p role="status" className="mt-1 text-center text-sm text-zinc-400">
             Your transaction was successful!
           </p>
           <p className="mt-6 text-center text-4xl font-bold text-zinc-900">

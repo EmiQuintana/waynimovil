@@ -46,7 +46,7 @@ export default function TransfersPage() {
 
   return (
     <AppShell>
-      <FlowHeader title="Transfers" />
+      <FlowHeader title="Transfers" focusTitle />
       <section className="-mt-10 flex flex-1 flex-col rounded-t-[2.5rem] bg-white px-6 pb-6 pt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-zinc-900">Latest Transfer</h2>

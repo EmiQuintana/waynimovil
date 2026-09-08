@@ -14,7 +14,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 z-10 border-t border-zinc-100 bg-white px-8 py-3">
+    <nav className="sticky bottom-0 z-10 border-t border-zinc-100 bg-white px-8 py-3" aria-label="Main">
       <ul className="grid grid-cols-3">
         {items.map((item) => {
           const active =
@@ -27,6 +27,7 @@ export function BottomNav() {
             <li key={item.href}>
               <Link
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={`flex flex-col items-center gap-1 text-xs font-medium ${
                   active ? "text-violet-600" : "text-zinc-400"
                 }`}
