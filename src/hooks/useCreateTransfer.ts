@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTransfer } from "@/services/wallet";
-import { movementsQueryKey, walletQueryKey } from "./useWallet";
+import { ledgerQueryKey } from "./useWallet";
 
 export function useCreateTransfer() {
   const queryClient = useQueryClient();
@@ -10,10 +10,7 @@ export function useCreateTransfer() {
   return useMutation({
     mutationFn: createTransfer,
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: walletQueryKey }),
-        queryClient.invalidateQueries({ queryKey: movementsQueryKey }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: ledgerQueryKey });
     },
   });
 }

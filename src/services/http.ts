@@ -15,7 +15,7 @@ export async function http<T>(
   const response = await fetch(input, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
   });

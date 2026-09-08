@@ -1,27 +1,28 @@
 import { create } from "zustand";
+import type { AppUser } from "@/services/users";
 
 type TransferDraft = {
-  recipientId: string | null;
+  recipient: AppUser | null;
   amount: number | null;
   concept: string;
 };
 
 type TransferDraftStore = TransferDraft & {
-  setRecipientId: (recipientId: string | null) => void;
+  setRecipient: (recipient: AppUser | null) => void;
   setAmount: (amount: number | null) => void;
   setConcept: (concept: string) => void;
   reset: () => void;
 };
 
 const initialDraft: TransferDraft = {
-  recipientId: null,
+  recipient: null,
   amount: null,
   concept: "",
 };
 
 export const useTransferDraftStore = create<TransferDraftStore>((set) => ({
   ...initialDraft,
-  setRecipientId: (recipientId) => set({ recipientId }),
+  setRecipient: (recipient) => set({ recipient }),
   setAmount: (amount) => set({ amount }),
   setConcept: (concept) => set({ concept }),
   reset: () => set(initialDraft),
