@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getDirectory } from "@/services/users";
+import { getDirectory, withLocalProfile } from "@/services/users";
 
-export const directoryQueryKey = ["directory"] as const;
+export const directoryQueryKey = ["directory", "profile-v2"] as const;
 
 export function useDirectory() {
   return useQuery({
@@ -21,7 +21,9 @@ export function useCurrentUser() {
 
   return {
     ...query,
-    data: query.data?.currentUser,
+    data: query.data?.currentUser
+      ? withLocalProfile(query.data.currentUser)
+      : undefined,
   };
 }
 

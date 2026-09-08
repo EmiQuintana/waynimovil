@@ -34,6 +34,11 @@ export default function TransfersPage() {
         lastName: name?.split(" ").slice(1).join(" ") ?? "",
         fullName: name ?? "Contact",
         avatar: avatar ?? "",
+        city: "",
+        state: "",
+        street: "",
+        email: "",
+        phone: "",
       },
     );
     router.push("/transfer");
