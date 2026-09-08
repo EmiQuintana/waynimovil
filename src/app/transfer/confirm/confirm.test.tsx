@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TransferConfirmPage from "@/app/transfer/confirm/page";
 import {
@@ -10,6 +10,13 @@ import {
 import { useTransferDraftStore } from "@/store/transferDraft";
 import { mockContact, mockCurrentUser } from "@/test/fixtures";
 import { renderWithQueryClient } from "@/test/render";
+
+const validPayload = {
+  recipient: mockContact,
+  currentUserId: mockCurrentUser.id,
+  amountCents: 50_000,
+  concept: "Lunch",
+};
 
 jest.mock("@/hooks/useDirectory", () => ({
   useCurrentUser: () => ({
@@ -26,14 +33,18 @@ jest.mock("@/hooks/useDirectory", () => ({
   }),
 }));
 
+function resetLedgerAndDraft() {
+  clearLedger();
+  useTransferDraftStore.getState().reset();
+  saveLedger({
+    balanceCents: 280_000,
+    movements: [],
+  });
+}
+
 describe("cannot confirm a transfer greater than the balance", () => {
   beforeEach(() => {
-    clearLedger();
-    useTransferDraftStore.getState().reset();
-    saveLedger({
-      balanceCents: 280_000,
-      movements: [],
-    });
+    resetLedgerAndDraft();
   });
 
   it("rejects the transfer in the wallet service and does not persist it", async () => {
@@ -72,5 +83,53 @@ describe("cannot confirm a transfer greater than the balance", () => {
 
     expect(getLedger().movements).toHaveLength(0);
     expect(getLedger().balanceCents).toBe(280_000);
+  });
+});
+
+describe("double submit does not create two movements", () => {
+  beforeEach(() => {
+    resetLedgerAndDraft();
+  });
+
+  it("keeps a single movement if createTransfer is called twice at the same time", async () => {
+    const results = await Promise.allSettled([
+      createTransfer(validPayload),
+      createTransfer(validPayload),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(
+      1,
+    );
+    expect(results.filter((result) => result.status === "rejected")).toHaveLength(
+      1,
+    );
+    expect(getLedger().movements).toHaveLength(1);
+    expect(getLedger().balanceCents).toBe(230_000);
+  });
+
+  it("creates only one movement if Confirm is clicked twice", async () => {
+    useTransferDraftStore.setState({
+      recipient: mockContact,
+      amountInput: "500",
+      amountCents: 50_000,
+      concept: "Lunch",
+    });
+
+    renderWithQueryClient(<TransferConfirmPage />);
+
+    const confirmButton = await screen.findByRole("button", { name: /^confirm$/i });
+
+    await waitFor(() => {
+      expect(confirmButton).toBeEnabled();
+    });
+
+    fireEvent.click(confirmButton);
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(getLedger().movements).toHaveLength(1);
+    });
+
+    expect(getLedger().balanceCents).toBe(230_000);
   });
 });
