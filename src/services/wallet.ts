@@ -1,32 +1,47 @@
-export const INITIAL_BALANCE = 2800;
-const STORAGE_KEY = "wayniwallet.ledger";
+import type { AppUser } from "./users";
+
+export const INITIAL_BALANCE_CENTS = 280_000;
+const STORAGE_KEY = "wayniwallet.ledger.v2";
 
 export type MovementType = "transfer" | "cashin" | "expense";
 
 export type Movement = {
   id: string;
   title: string;
-  amount: number;
+  amountCents: number;
   type: MovementType;
   createdAt: string;
+  reference: string;
   contactId?: string;
+  contactName?: string;
+  contactAvatar?: string;
 };
 
 export type Ledger = {
-  balance: number;
+  balanceCents: number;
   movements: Movement[];
 };
 
 export type TransferPayload = {
-  contactId: string;
-  amount: number;
+  recipient: AppUser;
+  currentUserId: string;
+  amountCents: number;
   concept: string;
+  forceError?: boolean;
 };
 
 const defaultLedger: Ledger = {
-  balance: INITIAL_BALANCE,
+  balanceCents: INITIAL_BALANCE_CENTS,
   movements: [],
 };
+
+let transferLock = false;
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 function isLedger(value: unknown): value is Ledger {
   if (!value || typeof value !== "object") {
@@ -34,7 +49,13 @@ function isLedger(value: unknown): value is Ledger {
   }
 
   const ledger = value as Ledger;
-  return typeof ledger.balance === "number" && Array.isArray(ledger.movements);
+  return (
+    Number.isInteger(ledger.balanceCents) && Array.isArray(ledger.movements)
+  );
+}
+
+function createReference() {
+  return String(Date.now() % 100_000_000).padStart(8, "0");
 }
 
 export function getLedger(): Ledger {
@@ -61,38 +82,58 @@ export function saveLedger(ledger: Ledger) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(ledger));
 }
 
-export function getWallet() {
-  return Promise.resolve({ balance: getLedger().balance });
-}
-
-export function getMovements() {
-  return Promise.resolve(getLedger().movements);
-}
-
-export function createTransfer(payload: TransferPayload) {
-  const ledger = getLedger();
-
-  if (payload.amount <= 0) {
-    return Promise.reject(new Error("Invalid amount"));
+export async function createTransfer(payload: TransferPayload) {
+  if (transferLock) {
+    throw new Error("Transfer already in progress");
   }
 
-  if (payload.amount > ledger.balance) {
-    return Promise.reject(new Error("Insufficient funds"));
+  transferLock = true;
+
+  try {
+    await wait(700);
+
+    if (payload.forceError) {
+      throw new Error("NETWORK_ERROR");
+    }
+
+    const concept = payload.concept.trim();
+    const ledger = getLedger();
+
+    if (!concept) {
+      throw new Error("Concept is required");
+    }
+
+    if (!Number.isInteger(payload.amountCents) || payload.amountCents <= 0) {
+      throw new Error("Invalid amount");
+    }
+
+    if (payload.amountCents > ledger.balanceCents) {
+      throw new Error("Insufficient funds");
+    }
+
+    if (payload.recipient.id === payload.currentUserId) {
+      throw new Error("Cannot transfer to yourself");
+    }
+
+    const movement: Movement = {
+      id: crypto.randomUUID(),
+      title: concept,
+      amountCents: -payload.amountCents,
+      type: "transfer",
+      createdAt: new Date().toISOString(),
+      reference: createReference(),
+      contactId: payload.recipient.id,
+      contactName: payload.recipient.fullName,
+      contactAvatar: payload.recipient.avatar,
+    };
+
+    saveLedger({
+      balanceCents: ledger.balanceCents - payload.amountCents,
+      movements: [movement, ...ledger.movements],
+    });
+
+    return movement;
+  } finally {
+    transferLock = false;
   }
-
-  const movement: Movement = {
-    id: crypto.randomUUID(),
-    title: payload.concept || "Transfer",
-    amount: -payload.amount,
-    type: "transfer",
-    createdAt: new Date().toISOString(),
-    contactId: payload.contactId,
-  };
-
-  saveLedger({
-    balance: Number((ledger.balance - payload.amount).toFixed(2)),
-    movements: [movement, ...ledger.movements],
-  });
-
-  return Promise.resolve(movement);
 }

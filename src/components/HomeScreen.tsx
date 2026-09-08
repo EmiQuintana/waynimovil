@@ -14,7 +14,7 @@ import { ArrowDownIcon, SwapIcon, WalletIcon } from "./Icons";
 
 export function HomeScreen() {
   const router = useRouter();
-  const setRecipient = useTransferDraftStore((state) => state.setRecipient);
+  const startTransfer = useTransferDraftStore((state) => state.startTransfer);
   const currentUser = useCurrentUser();
   const contacts = useContacts();
   const wallet = useWallet();
@@ -24,7 +24,11 @@ export function HomeScreen() {
   const usersLoading = currentUser.isLoading || contacts.isLoading;
 
   function handleSelectContact(contact: AppUser) {
-    setRecipient(contact);
+    if (currentUser.data && contact.id === currentUser.data.id) {
+      return;
+    }
+
+    startTransfer(contact);
     router.push("/transfer");
   }
 
@@ -68,7 +72,7 @@ export function HomeScreen() {
             <div className="mx-auto mt-3 h-10 w-40 animate-pulse rounded bg-white/40" />
           ) : (
             <p className="mt-1 text-4xl font-bold tracking-tight">
-              {formatCurrency(wallet.data?.balance ?? 0)}
+              {formatCurrency(wallet.data?.balanceCents ?? 0)}
             </p>
           )}
         </div>
@@ -91,7 +95,9 @@ export function HomeScreen() {
             <EmptyState message="You don't have contacts yet." />
           ) : (
             <ul className="flex gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {contacts.data.map((contact) => (
+              {contacts.data
+                .filter((contact) => contact.id !== currentUser.data?.id)
+                .map((contact) => (
                 <li key={contact.id} className="shrink-0">
                   <button
                     type="button"
@@ -158,10 +164,10 @@ function MovementItem({ movement }: { movement: Movement }) {
       </div>
       <p
         className={`shrink-0 font-semibold ${
-          movement.amount < 0 ? "text-red-500" : "text-emerald-500"
+          movement.amountCents < 0 ? "text-red-500" : "text-emerald-500"
         }`}
       >
-        {formatSignedCurrency(movement.amount)}
+        {formatSignedCurrency(movement.amountCents)}
       </p>
     </li>
   );

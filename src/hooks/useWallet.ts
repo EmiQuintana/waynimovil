@@ -22,7 +22,7 @@ export function useWallet() {
 
   return {
     ...query,
-    data: query.data ? { balance: query.data.balance } : undefined,
+    data: query.data ? { balanceCents: query.data.balanceCents } : undefined,
   };
 }
 
