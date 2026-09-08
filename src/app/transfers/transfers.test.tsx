@@ -1,23 +1,7 @@
 import { screen } from "@testing-library/react";
 import TransfersPage from "@/app/transfers/page";
 import { clearLedger, saveLedger } from "@/services/wallet";
-import { mockContact } from "@/test/fixtures";
 import { renderWithQueryClient } from "@/test/render";
-
-jest.mock("@/hooks/useDirectory", () => ({
-  useCurrentUser: () => ({
-    data: undefined,
-    isLoading: false,
-    isError: false,
-    refetch: jest.fn(),
-  }),
-  useContacts: () => ({
-    data: [mockContact],
-    isLoading: false,
-    isError: false,
-    refetch: jest.fn(),
-  }),
-}));
 
 describe("transfer history empty state", () => {
   beforeEach(() => {

@@ -12,12 +12,6 @@ type ContactCarouselProps = {
 
 export function ContactCarousel({ contacts, onSelect }: ContactCarouselProps) {
   const scrollerRef = useRef<HTMLUListElement>(null);
-  const dragRef = useRef({
-    active: false,
-    moved: false,
-    startX: 0,
-    startScroll: 0,
-  });
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -27,11 +21,7 @@ export function ContactCarousel({ contacts, onSelect }: ContactCarouselProps) {
     }
 
     function onWheel(event: WheelEvent) {
-      if (!scroller) {
-        return;
-      }
-
-      if (event.deltaY === 0 && event.deltaX === 0) {
+      if (!scroller || (event.deltaY === 0 && event.deltaX === 0)) {
         return;
       }
 
@@ -51,43 +41,6 @@ export function ContactCarousel({ contacts, onSelect }: ContactCarouselProps) {
       left: direction * 220,
       behavior: "smooth",
     });
-  }
-
-  function onPointerDown(event: React.PointerEvent<HTMLUListElement>) {
-    const scroller = scrollerRef.current;
-
-    if (!scroller || event.pointerType === "touch") {
-      return;
-    }
-
-    dragRef.current = {
-      active: true,
-      moved: false,
-      startX: event.clientX,
-      startScroll: scroller.scrollLeft,
-    };
-    scroller.setPointerCapture(event.pointerId);
-  }
-
-  function onPointerMove(event: React.PointerEvent<HTMLUListElement>) {
-    const scroller = scrollerRef.current;
-    const drag = dragRef.current;
-
-    if (!scroller || !drag.active) {
-      return;
-    }
-
-    const delta = event.clientX - drag.startX;
-
-    if (Math.abs(delta) > 4) {
-      drag.moved = true;
-    }
-
-    scroller.scrollLeft = drag.startScroll - delta;
-  }
-
-  function endDrag() {
-    dragRef.current.active = false;
   }
 
   return (
@@ -112,18 +65,7 @@ export function ContactCarousel({ contacts, onSelect }: ContactCarouselProps) {
       <ul
         ref={scrollerRef}
         aria-label="Frequent contacts"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onClickCapture={(event) => {
-          if (dragRef.current.moved) {
-            event.preventDefault();
-            event.stopPropagation();
-            dragRef.current.moved = false;
-          }
-        }}
-        className="flex cursor-grab gap-5 overflow-x-auto px-1 pb-2 [scrollbar-width:none] active:cursor-grabbing md:px-8 [&::-webkit-scrollbar]:hidden"
+        className="flex gap-5 overflow-x-auto px-1 pb-2 [scrollbar-width:none] md:px-8 [&::-webkit-scrollbar]:hidden"
       >
         {contacts.map((contact) => (
           <li key={contact.id} className="shrink-0">
